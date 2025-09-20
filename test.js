@@ -1,26 +1,28 @@
-// Simple test to verify our fact fetching function
+// Simple test to verify our fact fetching function (works in Node 14+ and browser)
 async function testCatFactFetch() {
-    try {
-        const response = await fetch('https://catfact.ninja/fact');
-        const data = await response.json();
-        
-        // Check if response has the expected structure
-        if (data.fact && typeof data.fact === 'string') {
-            console.log('✅ Test passed: Cat fact API is working');
-            return true;
-        } else {
-            console.log('❌ Test failed: Unexpected API response format');
-            return false;
-        }
-    } catch (error) {
-        console.log('❌ Test failed: Could not fetch from API', error);
-        return false;
+  try {
+    // Use global fetch if present (Node 18+/browser); otherwise lazy-load node-fetch
+    const _fetch = (typeof fetch !== 'undefined')
+      ? fetch
+      : (await import('node-fetch')).default;
+
+    const response = await _fetch('https://catfact.ninja/fact');
+    const data = await response.json();
+
+    if (data && typeof data.fact === 'string' && data.fact.length > 0) {
+      console.log('✅ Test passed: Cat fact API is working');
+      return true;
+    } else {
+      console.log('❌ Test failed: Unexpected API response format', data);
+      return false;
     }
+  } catch (error) {
+    console.log('❌ Test failed: Could not fetch from API', error);
+    return false;
+  }
 }
 
-// Run the test when this file is executed in a Node environment
+// Run the test when executed in Node (not in the browser)
 if (typeof window === 'undefined') {
-    testCatFactFetch().then(success => {
-        process.exit(success ? 0 : 1);
-    });
+  testCatFactFetch().then(success => process.exit(success ? 0 : 1));
 }
